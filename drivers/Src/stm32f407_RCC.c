@@ -7,21 +7,17 @@
 
 #include "stm32f407xx_RCC.h"
 
+void RCC_Init(RCC_Handle_t* pRCCHandle) {
+	setAHB1lock(pRCCHandle);
+	setAPB1Clock(pRCCHandle);
+	setAPB2Clock(pRCCHandle);
+	changeClockSource(pRCCHandle);
+}
 
-void RCC_Init(RCC_Handle_t* pRCCHandle){
-
-	setAHB1lock(pRCCHandle) ;
-	setAPB1Clock(pRCCHandle) ;
-	setAPB2Clock(pRCCHandle) ;
-	changeClockSource(pRCCHandle) ;
-
-	}
-
-void sysTick_Delay(uint32_t delayMS , RCC_Handle_t* pRCCHandle){
-
+void sysTick_Delay(uint32_t delayMS, RCC_Handle_t* pRCCHandle) {
 	uint32_t* sysCSR = (uint32_t*)(0xE000E010);
 	uint32_t* sysRVR = (uint32_t*)(0xE000E014);
-	uint32_t*  sysCVR = (uint32_t*)(0xE000E018);
+	uint32_t* sysCVR = (uint32_t*)(0xE000E018);
 	uint32_t temp  = 0 ;
 	uint32_t count = 0 ;
 	*sysCSR |= (1 << 2);	// enable processor clock
@@ -29,7 +25,7 @@ void sysTick_Delay(uint32_t delayMS , RCC_Handle_t* pRCCHandle){
 	*sysRVR &= ~(0xFFFFFF) ;
 	*sysRVR = temp ;
 	*sysCSR |= (1 << 0) ;
-	while(count <= delayMS){
+	while (count <= delayMS) {
 		if ((*sysCSR & (1 << 16))) {
 			count ++ ;
 			*sysRVR = temp ;
@@ -38,20 +34,19 @@ void sysTick_Delay(uint32_t delayMS , RCC_Handle_t* pRCCHandle){
 }
 
 void setAHB1lock(RCC_Handle_t* pRCCHandle) {
-uint8_t i=0 ;
-uint32_t temp = 0 ;
-uint8_t value = 0 ;
+	uint8_t i = 0 ;
+	uint32_t temp = 0 ;
+	uint8_t value = 0 ;
 
-if ((pRCCHandle->RCC_Config.AHB_ClockFreq <= SYSTEM_HSI ) ||
-	(pRCCHandle->RCC_Config.AHB_ClockFreq <= SYSTEM_HSE) ) {
+	if ( (pRCCHandle->RCC_Config.AHB_ClockFreq <= SYSTEM_HSI)
+	  || (pRCCHandle->RCC_Config.AHB_ClockFreq <= SYSTEM_HSE) ) {
 
-	if (pRCCHandle->RCC_Config.clockSource == HSI_CLOCK) {
-		 i=0 ;
-		 temp = SYSTEM_HSI / pRCCHandle->RCC_Config.AHB_ClockFreq ;
-		 value = 0 ;
+		if (pRCCHandle->RCC_Config.clockSource == HSI_CLOCK) {
+			i = 0 ;
+			temp = SYSTEM_HSI / pRCCHandle->RCC_Config.AHB_ClockFreq ;
+			value = 0 ;
 			if (temp == 1) {
 				value = 0 ;
-
 			}
 			if (temp >= 64) {
 				temp = temp / 2 ;
@@ -68,15 +63,14 @@ if ((pRCCHandle->RCC_Config.AHB_ClockFreq <= SYSTEM_HSI ) ||
 				printf("AHB1 HPRE value %d\n " , value ) ;
 			#endif
 			}
-		pRCCHandle->pRCC->CFGR &= ~( 0x0F << 4 ) ;
-		pRCCHandle->pRCC->CFGR |= ( value << 4 ) ;
-		i = 0 ;
-		value = 0  ;
-
-	  } else if (pRCCHandle->RCC_Config.clockSource == HSE_CLOCK) {
-			 i=0 ;
-			 temp = SYSTEM_HSE / pRCCHandle->RCC_Config.AHB_ClockFreq ;
-			 value = 0 ;
+			pRCCHandle->pRCC->CFGR &= ~( 0x0F << 4 ) ;
+			pRCCHandle->pRCC->CFGR |= ( value << 4 ) ;
+			i = 0 ;
+			value = 0  ;
+		  } else if (pRCCHandle->RCC_Config.clockSource == HSE_CLOCK) {
+			i = 0 ;
+			temp = SYSTEM_HSE / pRCCHandle->RCC_Config.AHB_ClockFreq ;
+			value = 0 ;
 			if (temp == 1) {
 				value = 0 ;
 
@@ -95,82 +89,74 @@ if ((pRCCHandle->RCC_Config.AHB_ClockFreq <= SYSTEM_HSI ) ||
 				 printf("Clock selected HSE stock at : %d running at : %d\n " , SYSTEM_HSE , pRCCHandle->RCC_Config.AHB_ClockFreq) ;
 					printf("AHB1 HPRE value %d\n " , value ) ;
 			 #endif
-		     }
-		pRCCHandle->pRCC->CFGR &= ~( 0x0F << 4 ) ;
-	    pRCCHandle->pRCC->CFGR |= ( value << 4 ) ;
-	    i = 0 ;
-	    value = 0 ;
-	 }
+			}
+			pRCCHandle->pRCC->CFGR &= ~( 0x0F << 4 ) ;
+			pRCCHandle->pRCC->CFGR |= ( value << 4 ) ;
+			i = 0 ;
+			value = 0 ;
+		 }
 
-	}else if ((pRCCHandle->RCC_Config.clockSource == PLL_CLOCK)) {
-		// check the current clock source
-		if (getClockSource(pRCCHandle) == PLL_CLOCK) {
-			// PLL cannot be configured when PLL is ON
+		} else if ((pRCCHandle->RCC_Config.clockSource == PLL_CLOCK)) {
+			// check the current clock source
+			if (getClockSource(pRCCHandle) == PLL_CLOCK) {
+				// PLL cannot be configured when PLL is ON
 				// switch the clock to HSI
-			pRCCHandle->RCC_Config.clockSource = HSI_CLOCK ;
-			changeClockSource(pRCCHandle) ;
-			// turn off PLL
-			pRCCHandle->pRCC->CR &= ~(1 << RCC_CR_PLLON) ;
-			pRCCHandle->RCC_Config.clockSource = PLL_CLOCK ;
+				pRCCHandle->RCC_Config.clockSource = HSI_CLOCK ;
+				changeClockSource(pRCCHandle) ;
+				// turn off PLL
+				pRCCHandle->pRCC->CR &= ~(1 << RCC_CR_PLLON) ;
+				pRCCHandle->RCC_Config.clockSource = PLL_CLOCK ;
+			}
+		   	// Configure the PLL engine
+			// max SYSCLK that can be achieved is 168MHZ
+			if (pRCCHandle->RCC_Config.PLLSource == HSI_CLOCK) {
+				pRCCHandle->pRCC->CR |= (1 << RCC_CR_HSION) ;
+				while(!(pRCCHandle->pRCC->CR & (1 << RCC_CR_HSIRDY) )) ;
+				
+				// load value 8 in M
+				pRCCHandle->pRCC->PLLCFGR &= ~(0x3F << 0) ;		// clearing the proper bit field bug fix
+				pRCCHandle->pRCC->PLLCFGR |=  (0x08 << 0) ;
+				// load the frequency value in N
+				pRCCHandle->pRCC->PLLCFGR &= ~((0x1FF) << 6) ;
+				pRCCHandle->pRCC->PLLCFGR |= ((pRCCHandle->RCC_Config.AHB_ClockFreq / 1000000) << 6) ;
+
+				// load the value in P
+				pRCCHandle->pRCC->PLLCFGR &= ~(0x03 << 16) ;
+			} else if (pRCCHandle->RCC_Config.PLLSource == HSE_CLOCK) {
+				// enable the HSI
+				pRCCHandle->pRCC->CR |= (1 << RCC_CR_HSEON) ;
+				while(!(pRCCHandle->pRCC->CR & (1 << RCC_CR_HSERDY) )) ;
+				// load value 4 in M
+				pRCCHandle->pRCC->PLLCFGR &= ~(0x3F << 0) ;
+				pRCCHandle->pRCC->PLLCFGR |=  (0x04 << 0) ;
+				// load the frequency value in N
+				pRCCHandle->pRCC->PLLCFGR &= ~((0x1FF) << 6) ;
+				pRCCHandle->pRCC->PLLCFGR |= ((pRCCHandle->RCC_Config.AHB_ClockFreq / 1000000) << 6) ;
+				// load the value in P
+				pRCCHandle->pRCC->PLLCFGR &= ~(0x03 << 16) ;
+			}
+	
+			uint32_t* Flash_Latency = (uint32_t *)0x40023C00;
+
+			// configure the flash wait state
+			int offset = 0;
+			int new_clk_freq = pRCCHandle->RCC_Config.AHB_ClockFreq;
+			if (new_clk_freq <= 30) {
+				offset = 0;	
+			} else if ((30000000 < new_clk_freq) && (new_clk_freq <= 60000000)) {
+				offset = 1;
+			} else if ((60000000 < new_clk_freq) && (new_clk_freq <= 90000000)) {
+				offset = 2;
+			} else if ((90000000 < new_clk_freq) && (new_clk_freq <= 120000000)) {
+				offset = 3;
+			} else if ((120000000 < new_clk_freq) && (new_clk_freq <= 150000000)) {
+				offset = 4;
+			} else if ((150000000 < new_clk_freq) && (new_clk_freq <= 168000000)) {
+				offset = 5;
+			}
+			*Flash_Latency &= ~(0x07 << 0);
+			*Flash_Latency |= (offset << 0);
 		}
- 	   // Configure the PLL engine
-		// max SYSCLK that can be achieved is 168MHZ
-		if (pRCCHandle->RCC_Config.PLLSource == HSI_CLOCK) {
-			pRCCHandle->pRCC->CR |= (1 << RCC_CR_HSION) ;
-			while(!(pRCCHandle->pRCC->CR & (1 << RCC_CR_HSIRDY) )) ;
-		// load value 8 in M
-		pRCCHandle->pRCC->PLLCFGR &= ~(0x3F << 0) ;		// clearing the proper bit field bug fix
-		pRCCHandle->pRCC->PLLCFGR |= (0x08 << 0) ;
-		// load the frequency value in N
-		pRCCHandle->pRCC->PLLCFGR &= ~((0x1FF) << 6) ;
-		pRCCHandle->pRCC->PLLCFGR |= ((pRCCHandle->RCC_Config.AHB_ClockFreq / 1000000) << 6) ;
-
-		// load the value in P
-		pRCCHandle->pRCC->PLLCFGR &= ~(0x03 << 16) ;
-
-		}else if (pRCCHandle->RCC_Config.PLLSource == HSE_CLOCK) {
-			// enable the HSI
-			pRCCHandle->pRCC->CR |= (1 << RCC_CR_HSEON) ;
-			while(!(pRCCHandle->pRCC->CR & (1 << RCC_CR_HSERDY) )) ;
-			// load value 4 in M
-			pRCCHandle->pRCC->PLLCFGR &= ~(0x3F<< 0) ;
-			pRCCHandle->pRCC->PLLCFGR |= (0x04 << 0) ;
-			// load the frequency value in N
-			pRCCHandle->pRCC->PLLCFGR &= ~((0x1FF) << 6) ;
-			pRCCHandle->pRCC->PLLCFGR |= ((pRCCHandle->RCC_Config.AHB_ClockFreq / 1000000) << 6) ;
-			// load the value in P
-			pRCCHandle->pRCC->PLLCFGR &= ~(0x03 << 16) ;
-
-		}
-		uint32_t* Flash_Latency = (uint32_t *)0x40023C00 ;
-
-		// configure the flash wait state
-		if (pRCCHandle->RCC_Config.AHB_ClockFreq <= 30) {
-			*Flash_Latency &= ~(0x07 << 0 ) ;
-			*Flash_Latency |= (0 << 0 ) ;
-		}else if ((30000000 < pRCCHandle->RCC_Config.AHB_ClockFreq) && ( pRCCHandle->RCC_Config.AHB_ClockFreq <= 60000000)) {
-			*Flash_Latency &= ~(0x07 << 0 ) ;
-			*Flash_Latency |= (1 << 0) ;
-
-		}else if ((60000000 < pRCCHandle->RCC_Config.AHB_ClockFreq) && ( pRCCHandle->RCC_Config.AHB_ClockFreq <= 90000000)) {
-			*Flash_Latency &= ~(0x07 << 0 ) ;
-			*Flash_Latency |= (2 << 0 ) ;
-
-		}else if ((90000000 < pRCCHandle->RCC_Config.AHB_ClockFreq) && ( pRCCHandle->RCC_Config.AHB_ClockFreq <= 120000000)) {
-			*Flash_Latency &= ~(0x07 << 0 ) ;
-			*Flash_Latency |= (3 << 0 ) ;
-
-		}else if ((120000000 < pRCCHandle->RCC_Config.AHB_ClockFreq) && ( pRCCHandle->RCC_Config.AHB_ClockFreq <= 150000000)) {
-			*Flash_Latency &= ~(0x07 << 0 ) ;
-			*Flash_Latency |= (4 << 0 ) ;
-
-		}else if ((150000000 < pRCCHandle->RCC_Config.AHB_ClockFreq) && ( pRCCHandle->RCC_Config.AHB_ClockFreq <= 168000000)) {
-			*Flash_Latency &= ~(0x07 << 0 ) ;
-			*Flash_Latency |= (5 << 0 ) ;
-
-		}
-
-	}
 }
 
 void setAPB1Clock(RCC_Handle_t* pRCCHandle) {
@@ -182,30 +168,30 @@ if (((pRCCHandle->RCC_Config.clockSource == HSI_CLOCK) ||
 	(pRCCHandle->RCC_Config.APB1_ClockFreq <= SYSTEM_HSI)) {
 	 if (getAHBClock(pRCCHandle) < pRCCHandle->RCC_Config.APB1_ClockFreq) {
 		#if RCC_DEBUG
-			printf("ERR : APB1 FREQ : %d not possible AHB1 is : %d\n " , pRCCHandle->RCC_Config.APB1_ClockFreq , getAHBClock(pRCCHandle)) ;
+			printf("ERR : APB1 FREQ : %d not possible AHB1 is : %d\n ", 
+			       pRCCHandle->RCC_Config.APB1_ClockFreq , getAHBClock(pRCCHandle)) ;
 		#endif
 		return ;
 	 }
 	 temp = getAHBClock(pRCCHandle) / pRCCHandle->RCC_Config.APB1_ClockFreq ;
 		if (temp == 1) {
-			 value = 0 ;
-
+			value = 0 ;
+		}
+		if (temp >= 2) {
+			value =  4;
+			for ( ; temp !=2; i++) {
+				temp = temp / 2 ;
 			}
-			if (temp >= 2){
-				value =  4;
-				 for ( ;temp !=2 ; i++) {
-						temp = temp / 2 ;
-				  }
-				  value = value + i ;
+			value = value + i ;
 
 				 #if RCC_DEBUG
 						printf("APB1 PRE1 value %d\n " , value ) ;
 				 #endif
-        }
-			pRCCHandle->pRCC->CFGR &= ~( 0x07 << 10 ) ;
-			 pRCCHandle->pRCC->CFGR |= ( value << 10 ) ;
-			i = 0 ;
-			value = 0 ;
+        	}
+		pRCCHandle->pRCC->CFGR &= ~( 0x07 << 10 ) ;
+		pRCCHandle->pRCC->CFGR |=  ( value << 10 );
+		i = 0 ;
+		value = 0 ;
 
   } else if (pRCCHandle->RCC_Config.clockSource == PLL_CLOCK) {
 
@@ -234,23 +220,18 @@ if (((pRCCHandle->RCC_Config.clockSource == HSI_CLOCK) ||
 				printf("APB1 PRE1 value %d\n " , value ) ;
 		 #endif
 
-	if (i == 1) {
-		value =  0 ;
-	}else if (i == 2) {
-		value = 4 ;
-	}else if (i == 4) {
-		value = 5 ;
-	}else if (i == 8) {
-		value = 6 ;
-	}else if (i == 16) {
-		value = 7 ;
-	}
+		switch (i) {
+			case  1: { value = 0; }; break;
+			case  2: { value = 4; }; break;
+			case  4: { value = 5; }; break;
+			case  8: { value = 6; }; break;
+			case 16: { value = 7; }; break;
+			default: break;
+		}
 		 pRCCHandle->pRCC->CFGR &= ~( 0x07 << 10 ) ;
 		 pRCCHandle->pRCC->CFGR |= ( value << 10 ) ;
-
 	 }
-
-   }
+}
 
 
 void setAPB2Clock(RCC_Handle_t* pRCCHandle) {
