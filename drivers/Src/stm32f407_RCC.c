@@ -33,6 +33,10 @@ void sysTick_Delay(uint32_t delayMS, RCC_Handle_t *pRCCHandle) {
     }
 }
 
+void rcc_wait_ready_flag(uint32_t flag) {
+	while (!(pRCCHandle->pRCC->CR & (1 << flag))) {};
+}
+
 void setAHB1_flashLatency(RCC_Handle_t *pRCCHanle) {
 	uint32_t *Flash_Latency = (uint32_t *)0x40023C00;
 
@@ -89,7 +93,8 @@ void setAHB1_clockPLL(RCC_Handle_t *pRCCHanle) {
 	}
 	
 	pRCCHandle->pRCC->CR |= (1 << flag_on);
-	while (!(pRCCHandle->pRCC->CR & (1 << flag_ready))) {}
+    rcc_wait_ready_flag(flag_ready);
+
 	// load value 'pll_M' in M
 	pRCCHandle->pRCC->PLLCFGR &= ~(0x3F << 0); // clearing the proper bit field bug fix
 	pRCCHandle->pRCC->PLLCFGR |= (pll_M << 0);
@@ -307,10 +312,6 @@ void setAPB2Clock(RCC_Handle_t *pRCCHandle) {
         pRCCHandle->pRCC->CFGR &= ~(0x07 << 13);
         pRCCHandle->pRCC->CFGR |= (value << 13);
     }
-}
-
-void rcc_wait_ready_flag(uint32_t flag) {
-	while (!(pRCCHandle->pRCC->CR & (1 << flag))) {};
 }
 
 void changeClockSource(RCC_Handle_t *pRCCHandle) {
