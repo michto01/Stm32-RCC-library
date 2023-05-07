@@ -69,7 +69,7 @@ void setAHB1_clockPLL(RCC_Handle_t *pRCCHanle) {
         }
 
 	// Configure the PLL engine
-        // max SYSCLK that can be achieved is 168MHZ
+    // max SYSCLK that can be achieved is 168MHZ
 	int flag_ready = -1;
 	int flag_on = -1;
 	int pll_M = -1;
@@ -99,7 +99,7 @@ void setAHB1_clockPLL(RCC_Handle_t *pRCCHanle) {
 	// load the value in P
 	pRCCHandle->pRCC->PLLCFGR &= ~(0x03 << 16);
 	
-        // configure the flash wait state
+    // configure the flash wait state
 	setAHB1_flashLatency(pRCCHandle);
 }
 
@@ -119,9 +119,9 @@ void setAHB1_clockHSx(RCC_Handle_t *pRCCHanle, uint32_t type) {
 		value = value + i;
 
 #if RCC_DEBUG
-                printf("Clock stock at : %d running at : %d\n ",
-                       type, pRCCHandle->RCC_Config.AHB_ClockFreq);
-                printf("AHB1 HPRE value %d\n ", value);
+        printf("Clock stock at : %d running at : %d\n ",
+                    type, pRCCHandle->RCC_Config.AHB_ClockFreq);
+        printf("AHB1 HPRE value %d\n ", value);
 #endif
 	}
 	pRCCHandle->pRCC->CFGR &= ~(0x0F << 4);
@@ -321,7 +321,7 @@ void changeClockSource(RCC_Handle_t *pRCCHandle) {
 
     } else if (pRCCHandle->RCC_Config.clockSource == HSE_CLOCK) {
         pRCCHandle->pRCC->CR |= (1 << RCC_CR_HSEON);
-	rcc_wait_ready_flag(RCC_CR_HSERDY);
+        rcc_wait_ready_flag(RCC_CR_HSERDY);
         pRCCHandle->pRCC->CFGR |= (1 << 0);
 
     } else if (pRCCHandle->RCC_Config.clockSource == PLL_CLOCK) {
@@ -331,28 +331,33 @@ void changeClockSource(RCC_Handle_t *pRCCHandle) {
     }
 }
 
-uint16_t getClockSource(RCC_Handle_t *pRCCHandle) {
+uint16_t getClockSource(const RCC_Handle_t *__restrict pRCCHandle) {
+    uint32_t source = (pRCCHandle->pRCC->CFGR & 0x0C;
+    uint16_t output = 0;
 
-    if ((pRCCHandle->pRCC->CFGR & 0x0C) == 0x00) {
-#if RCC_DEBUG
-        printf("CLOCK source HSI: %d \n", (pRCCHandle->pRCC->CFGR & 0x0C) >> 0);
-#endif
-        return HSI_CLOCK;
-    } else if ((pRCCHandle->pRCC->CFGR & 0x0C) == 0x04) {
-#if RCC_DEBUG
-        printf("CLOCK source HSE: %d \n", (pRCCHandle->pRCC->CFGR & 0x0C) >> 0);
-#endif
-        return HSE_CLOCK;
-    } else if ((pRCCHandle->pRCC->CFGR & 0x0C) == 0x08) {
-#if RCC_DEBUG
-        printf("CLOCK source PLL: %d \n", (pRCCHandle->pRCC->CFGR & 0x0C) >> 0);
-#endif
-        return PLL_CLOCK;
+    switch (source) {
+        case 0x00: output = HSI_CLOCK; break;
+        case 0x04: output = HSE_CLOCK; break;
+        case 0x08: output = PLL_CLOCK; break;
+        default: break;
     }
-    return 0;
+
+#if RCC_DEBUG
+    char *souce_name;
+    switch (output) {
+        case HSI_CLOCK: souce_name = "HSI"; break;
+        case HSE_CLOCK: souce_name = "HSE"; break;
+        case PLL_CLOCK: souce_name = "PLL"; break;
+        default: break;
+    }
+
+    printf("CLOCK source %s: %d \n", source_name, source >> 0);
+#endif
+
+    return output;
 }
 
-uint32_t getAHBClock(RCC_Handle_t *pRCCHandle) {
+uint32_t getAHBClock(const RCC_Handle_t *__restrict pRCCHandle) {
     uint32_t temp = 0;
     uint32_t value = 2;
 
@@ -434,7 +439,7 @@ uint32_t getAHBClock(RCC_Handle_t *pRCCHandle) {
                     2); // divide by P
 
             if (temp2 >= 12) {
-                value2 = 4; // 8 ,16 ,32,64, 128 , 256
+                value2 = 4; // 8, 16, 32, 64, 128, 256
             }
             if (temp2 > 8) {
                 temp2 = temp2 - 8;
@@ -455,7 +460,7 @@ uint32_t getAHBClock(RCC_Handle_t *pRCCHandle) {
     return 0;
 }
 
-uint32_t getAPB1Clock(RCC_Handle_t *pRCCHandle) {
+uint32_t getAPB1Clock(const RCC_Handle_t *__restrict pRCCHandle) {
     uint16_t temp = 0;
     uint8_t value = 2;
 
@@ -476,12 +481,9 @@ uint32_t getAPB1Clock(RCC_Handle_t *pRCCHandle) {
     return (getAHBClock(pRCCHandle) / value);
 }
 
-uint32_t getAPB2Clock(RCC_Handle_t *pRCCHandle) {
-
-    uint16_t temp = 0;
+uint32_t getAPB2Clock(const RCC_Handle_t *__restrict pRCCHandle) {
+    uint16_t temp = ((pRCCHandle->pRCC->CFGR & 0xE000) >> 13);
     uint8_t value = 2;
-
-    temp = ((pRCCHandle->pRCC->CFGR & 0xE000) >> 13);
 
     if (temp > 4) {
         temp = temp - 4;
