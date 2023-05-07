@@ -291,17 +291,13 @@ void setAPB2Clock(RCC_Handle_t *pRCCHandle) {
 #if RCC_DEBUG
         printf("APB2 PRE2 value %d\n ", value);
 #endif
-
-        if (i == 1) {
-            value = 0;
-        } else if (i == 2) {
-            value = 4;
-        } else if (i == 4) {
-            value = 5;
-        } else if (i == 8) {
-            value = 6;
-        } else if (i == 16) {
-            value = 7;
+	switch (i) {
+        case 1: { value = 0; }; break;
+        case 2: { value = 4; }; break;
+        case 4: { value = 5; }; break;
+        case 8: { value = 6; }; break;
+        case 16: { value = 7; }; break;
+        default: break;
         }
 
 #if RCC_DEBUG
@@ -313,24 +309,24 @@ void setAPB2Clock(RCC_Handle_t *pRCCHandle) {
     }
 }
 
-void changeClockSource(RCC_Handle_t *pRCCHandle) {
+void rcc_wait_ready_flag(uint32_t flag) {
+	while (!(pRCCHandle->pRCC->CR & (1 << flag))) {};
+}
 
+void changeClockSource(RCC_Handle_t *pRCCHandle) {
     if (pRCCHandle->RCC_Config.clockSource == HSI_CLOCK) {
         pRCCHandle->pRCC->CR |= (1 << RCC_CR_HSION);
-        while (!(pRCCHandle->pRCC->CR & (1 << RCC_CR_HSIRDY)))
-            ;
+        rcc_wait_ready_flag(RCC_CR_HSIRDY);
         pRCCHandle->pRCC->CFGR &= ~(3 << 0);
 
     } else if (pRCCHandle->RCC_Config.clockSource == HSE_CLOCK) {
         pRCCHandle->pRCC->CR |= (1 << RCC_CR_HSEON);
-        while (!(pRCCHandle->pRCC->CR & (1 << RCC_CR_HSERDY)))
-            ;
+	rcc_wait_ready_flag(RCC_CR_HSERDY);
         pRCCHandle->pRCC->CFGR |= (1 << 0);
 
     } else if (pRCCHandle->RCC_Config.clockSource == PLL_CLOCK) {
         pRCCHandle->pRCC->CR |= (1 << RCC_CR_PLLON);
-        while (!(pRCCHandle->pRCC->CR & (1 << RCC_CR_PLLRDY)))
-            ;
+       	rcc_wait_ready_flag(RCC_CR_PLLRDY);
         pRCCHandle->pRCC->CFGR |= (1 << 1);
     }
 }
@@ -355,8 +351,8 @@ uint16_t getClockSource(RCC_Handle_t *pRCCHandle) {
     }
     return 0;
 }
-uint32_t getAHBClock(RCC_Handle_t *pRCCHandle) {
 
+uint32_t getAHBClock(RCC_Handle_t *pRCCHandle) {
     uint32_t temp = 0;
     uint32_t value = 2;
 
@@ -364,7 +360,7 @@ uint32_t getAHBClock(RCC_Handle_t *pRCCHandle) {
         // default for HSI is 16MHZ
         temp = ((pRCCHandle->pRCC->CFGR & 0xF0) >> 4);
         if (temp >= 12) {
-            value = 4; // 8 ,16 ,32,64, 128 , 256
+            value = 4; // 8, 16, 32, 64, 128 , 256
         }
         if (temp > 8) {
             temp = temp - 8;
@@ -410,7 +406,7 @@ uint32_t getAHBClock(RCC_Handle_t *pRCCHandle) {
                     2); // divide by P
 
             if (temp2 >= 12) {
-                value2 = 4; // 8 ,16 ,32,64, 128 , 256
+                value2 = 4; // 8, 16, 32, 64, 128, 256
             }
             if (temp2 > 8) {
                 temp2 = temp2 - 8;
