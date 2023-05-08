@@ -12,11 +12,11 @@
 #include <math.h>
 ///////////////////////// SYSTEM CLOCK INFO //////////////////////////
 #define AHB_MAX_FREQ 	168000000 // MHZ
-#define APB1_MAX_FREQ 	42000000	// MHZ
-#define APB2_MAX_FREQ 	84000000	// MHZ
+#define APB1_MAX_FREQ 	 42000000 // MHZ
+#define APB2_MAX_FREQ 	 84000000 // MHZ
 #define AHB2_MAX_FREQ 	168000000 // MHZ
-#define SYSTEM_HSE		 8000000	// MHZ
-#define SYSTEM_HSI 	    16000000  // MHZ
+#define SYSTEM_HSE		  8000000 // MHZ
+#define SYSTEM_HSI 	     16000000 // MHZ
 //////////////////////////////////////////////////////////////////////
 #ifndef RCC_DEBUG
 #define RCC_DEBUG 0
@@ -64,7 +64,7 @@
 #define AHB_FREQ_HSE_31K   31250
 
 // Use the below options when using HSI as a clock source for setting APB1 bus clock frequency
-#define APB1_FREQ_HSI_16M   16000000
+#define APB1_FREQ_HSI_16M  16000000
 #define APB1_FREQ_HSI_8M    8000000
 #define APB1_FREQ_HSI_4M    4000000
 #define APB1_FREQ_HSI_2M    2000000
@@ -79,13 +79,13 @@
 #define APB1_FREQ_HSE_4M    4000000
 #define APB1_FREQ_HSE_2M    2000000
 #define APB1_FREQ_HSE_1M    1000000
-#define APB1_FREQ_HSE_500K  500000
+#define APB1_FREQ_HSE_500K   500000
 //#define APB1_FREQ_HSE_125K  125000
 //#define APB1_FREQ_HSE_62K   62500
 //#define APB1_FREQ_HSE_31K   31250
 
 // Use the below options when using HSI as a clock source for setting APB2 bus clock frequency
-#define APB2_FREQ_HSI_16M   16000000
+#define APB2_FREQ_HSI_16M  16000000
 #define APB2_FREQ_HSI_8M    8000000
 #define APB2_FREQ_HSI_4M    4000000
 #define APB2_FREQ_HSI_2M    2000000
@@ -100,11 +100,10 @@
 #define APB2_FREQ_HSE_4M    4000000
 #define APB2_FREQ_HSE_2M    2000000
 #define APB2_FREQ_HSE_1M    1000000
-#define APB2_FREQ_HSE_500K  500000
+#define APB2_FREQ_HSE_500K   500000
 //#define APB2_FREQ_HSE_125K  125000
 //#define APB2_FREQ_HSE_62K   62500
 //#define APB2_FREQ_HSE_31K   31250
-
 
 #define RCC_CR_HSION 		00
 #define RCC_CR_HSIRDY 		01
@@ -119,37 +118,33 @@
 #define RCC_CR_PLLI2SON 	26
 #define RCC_CR_PLLI2SRDY	27
 
+typedef struct {
+	uint8_t clockSource;
+	uint32_t APB1_ClockFreq;
+	uint32_t APB2_ClockFreq;
+	volatile uint32_t AHB_ClockFreq ;
+	uint8_t PLLSource;
+	uint8_t MC01_prescaler;
+	uint8_t MC02_prescaler;
+	uint8_t MC01_source;
+	uint8_t MC02_source;
+} RCC_Configuration_t;
 
-
-typedef struct{
-uint8_t clockSource ;
-uint32_t APB1_ClockFreq ;
-uint32_t APB2_ClockFreq ;
-volatile uint32_t AHB_ClockFreq  ;
-uint8_t PLLSource ;
-uint8_t MC01_prescaler ;
-uint8_t MC02_prescaler ;
-uint8_t MC01_source;
-uint8_t MC02_source ;
-}RCC_Configuration_t;
-
-
-typedef struct{
-RCC_RegDef_t *pRCC ;
-RCC_Configuration_t RCC_Config ;
-}RCC_Handle_t;
+typedef struct {
+	RCC_RegDef_t *pRCC ;
+	RCC_Configuration_t RCC_Config ;
+} RCC_Handle_t;
 
 void RCC_Init(RCC_Handle_t* pRCCHandle );
-void sysTick_Delay(uint32_t delayMS , RCC_Handle_t* pRCCHandle) ;
-void changeClockSource(RCC_Handle_t* pRCCHandle );
-void setAHB1lock(RCC_Handle_t* pRCCHandle) ;
-void setAPB1Clock(RCC_Handle_t* pRCCHandle) ;
-void setAPB2Clock(RCC_Handle_t* pRCCHandle) ;
+void sysTick_Delay(uint32_t delayMS , RCC_Handle_t* pRCCHandle);
+void changeClockSource(RCC_Handle_t* pRCCHandle);
+void setAHB1lock(RCC_Handle_t* pRCCHandle);
+void setAPB1Clock(RCC_Handle_t* pRCCHandle);
+void setAPB2Clock(RCC_Handle_t* pRCCHandle);
 
 uint16_t getClockSource(RCC_Handle_t* pRCCHandle);
-uint32_t getAHBClock(RCC_Handle_t* pRCCHandle) ;
-uint32_t getAPB1Clock(RCC_Handle_t* pRCCHandle) ;
-uint32_t getAPB2Clock(RCC_Handle_t* pRCCHandle) ;
-
+uint32_t getAHBClock(RCC_Handle_t* pRCCHandle);
+uint32_t getAPB1Clock(RCC_Handle_t* pRCCHandle);
+uint32_t getAPB2Clock(RCC_Handle_t* pRCCHandle);
 
 #endif /* INC_STM32F407XX_RCC_H_ */
